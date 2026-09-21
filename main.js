@@ -366,7 +366,7 @@ function cart() {
 
       var lines = [];
       lines.push(($_config.text && $_config.text.checkout_intro) ? $_config.text.checkout_intro : 'Halo admin, saya ingin memesan:');
-      lines.push('====================');
+      lines.push('');
 
       var totalItemCount = 0;
       var grandTotalPrice = 0;
@@ -410,7 +410,7 @@ function cart() {
         }
       }
 
-      lines.push('====================');
+      lines.push('');
       var totalLabel = ($_config.text && $_config.text.cart_total) ? $_config.text.cart_total : 'Total';
       var orderLabel = ($_config.text && $_config.text.cart_order) ? $_config.text.cart_order : 'Pesanan';
       lines.push(totalLabel + ': *' + totalItemCount + ' ' + orderLabel + '* (*' + separator(grandTotalPrice) + '*)');
@@ -420,7 +420,7 @@ function cart() {
         lines.push(weightLabel + ': *' + kg(grandTotalWeight) + '*');
       }
 
-      lines.push('====================');
+      lines.push('');
       var infoLabel = ($_config.text && $_config.text.checkout_info) ? $_config.text.checkout_info : 'Informasi Pemesan';
       lines.push('*' + infoLabel + ':*');
 
