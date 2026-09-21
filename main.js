@@ -80,18 +80,23 @@ function cart() {
     var _0x5de058 = $(".img", _0x11cfbd).attr('src');
     var _0x4ee47c = location.href;
     var _0x42c0da = $(".title", _0x11cfbd).text().replace(/\n/g, '').replaceAll("  ", '');
-    var _0x104fa4 = '';
-    var _0x154ee0 = Number($(".price b", _0x11cfbd).attr("data-price"));
-    var _0x5630f1 = Number($('.price', _0x11cfbd).attr("data-weight"));
-    var _0xdd1fc8 = $('.price', _0x11cfbd).attr("data-unit");
-    var _0x889a26 = Number($(".qty input", _0x11cfbd).val());
-    if ($(".variant", _0x11cfbd).length) {
-      if ($(".variant button.active", _0x11cfbd).length) {
-        _0x27c2a8 = _0x27c2a8 + '|' + $(".variant label", _0x11cfbd).text().replace(/\n/g, '').replaceAll("  ", '') + " : " + $(".variant button.active", _0x11cfbd).text().replace(/\n/g, '').replaceAll("  ", '');
-        _0x104fa4 = {
-          'label': $(".variant label", _0x11cfbd).text().replace(/\n/g, '').replaceAll("  ", ''),
-          'value': $(".variant button.active", _0x11cfbd).text().replace(/\n/g, '').replaceAll("  ", '')
-        };
+    var _0x104fa4 = [];
+    var _variantIdParts = [];
+    if ($(".item.variant", _0x11cfbd).length) {
+      $(".item.variant", _0x11cfbd).each(function () {
+        var _vLabel = $("label", this).text().replace(/\n/g, '').replaceAll("  ", '').trim();
+        var _vActiveBtn = $("button.active", this);
+        if (_vActiveBtn.length) {
+          var _vVal = _vActiveBtn.text().replace(/\n/g, '').replaceAll("  ", '').trim();
+          _0x104fa4.push({
+            'label': _vLabel,
+            'value': _vVal
+          });
+          _variantIdParts.push(_vLabel + " : " + _vVal);
+        }
+      });
+      if (_variantIdParts.length > 0) {
+        _0x27c2a8 = _0x27c2a8 + '|' + _variantIdParts.join('|');
       }
     }
     $("#cart-btn").removeClass("open");
@@ -111,7 +116,8 @@ function cart() {
       'img': _0x5de058,
       'title': _0x42c0da,
       'link': _0x4ee47c,
-      'variant': _0x104fa4,
+      'variants': _0x104fa4,
+      'variant': _0x104fa4.length ? _0x104fa4[0] : '',
       'price': _0x154ee0,
       'weight': _0x5630f1,
       'unit': _0xdd1fc8,
@@ -198,8 +204,15 @@ function cart() {
       var _0xd9858d = 0x0;
       for (var _0x144444 in _0x7b9705) {
         _0xd9858d++;
-        var _0x42a4eb = _0x7b9705[_0x144444];
-        _0x38c930 += "                    " + (_0x7b9705.length > 0x1 ? _0xd9858d + ". " : '') + '*' + _0x42a4eb.title + "*\n\n                    " + (_0x42a4eb.variant ? '[tab]' + _0x42a4eb.variant.label + " : *" + _0x42a4eb.variant.value + "*\n" : '') + "                    [tab]" + $_config.text.cart_qty_n_price + " : *" + _0x42a4eb.qty + "* x " + separator(_0x42a4eb.price) + " = *" + separator(_0x42a4eb.price * _0x42a4eb.qty) + "*\n                    [tab]" + $_config.text.cart_note + " : " + (_0x42a4eb.note ? '*' + _0x42a4eb.note + '*' : '-') + "\n                    \n                ";
+        var _variantWa = '';
+        if (_0x42a4eb.variants && _0x42a4eb.variants.length) {
+          for (var _wv = 0; _wv < _0x42a4eb.variants.length; _wv++) {
+            _variantWa += "                    [tab]" + _0x42a4eb.variants[_wv].label + " : *" + _0x42a4eb.variants[_wv].value + "*\n";
+          }
+        } else if (_0x42a4eb.variant) {
+          _variantWa += "                    [tab]" + _0x42a4eb.variant.label + " : *" + _0x42a4eb.variant.value + "*\n";
+        }
+        _0x38c930 += "                    " + (_0x7b9705.length > 0x1 ? _0xd9858d + ". " : '') + '*' + _0x42a4eb.title + "*\n\n" + _variantWa + "                    [tab]" + $_config.text.cart_qty_n_price + " : *" + _0x42a4eb.qty + "* x " + separator(_0x42a4eb.price) + " = *" + separator(_0x42a4eb.price * _0x42a4eb.qty) + "*\n                    [tab]" + $_config.text.cart_note + " : " + (_0x42a4eb.note ? '*' + _0x42a4eb.note + '*' : '-') + "\n                    \n                ";
         _0x3b3318 = _0x3b3318 + Number(_0x42a4eb.qty);
         _0x2d32cc = _0x2d32cc + Number(_0x42a4eb.price * _0x42a4eb.qty);
         _0x18e58d = _0x18e58d + Number(_0x42a4eb.weight * _0x42a4eb.qty);
@@ -233,7 +246,15 @@ function cart() {
     var _0x1c3f3e = 0x0;
     for (var _0x34f50b in _0x7b9705) {
       var _0x37360f = _0x7b9705[_0x34f50b];
-      var _0x1e207f = "                <div class=\"item\" data-id=\"" + _0x37360f.id + "\" data-index=\"" + _0x34f50b + "\">                    <div class=\"left\">                        <b class=\"title\">" + _0x37360f.title + "</b>                        <br>                        " + (_0x37360f.variant ? _0x37360f.variant.label + " : <b class=\"variant\">" + _0x37360f.variant.value + '</b><br>' : '') + "                        <input class=\"note\" type=\"text\" placeholder=\"+ " + $_config.text.cart_note + "..\" value=\"" + (_0x37360f.note ? _0x37360f.note : '') + "\">                        <b class=\"total\">" + separator(_0x37360f.price) + '</b>' + (_0x37360f.unit ? " <span class=\"unit\">/" + _0x37360f.unit + "</span>" : '') + "                    </div>                    <div class=\"right\">                        <a class=\"link\" href=\"" + _0x37360f.link + "\">                            <img class=\"img\" src=\"" + _0x37360f.img + "\"/>                            " + (_0x37360f.weight ? "<small class=\"weight\" title=\"" + $_config.text.cart_weight + "\">" + kg(_0x37360f.weight) + '</small>' : '') + "                        </a>                        <fieldset class=\"qty\">                            <button type=\"button\">-</button>                            <input type=\"number\" value=\"" + _0x37360f.qty + "\">                            <button type=\"button\">+</button>                        </fieldset>                    </div>                </div>";
+      var _variantHtml = '';
+      if (_0x37360f.variants && _0x37360f.variants.length) {
+        for (var _v = 0; _v < _0x37360f.variants.length; _v++) {
+          _variantHtml += _0x37360f.variants[_v].label + " : <b class=\"variant\">" + _0x37360f.variants[_v].value + "</b><br>";
+        }
+      } else if (_0x37360f.variant) {
+        _variantHtml += _0x37360f.variant.label + " : <b class=\"variant\">" + _0x37360f.variant.value + "</b><br>";
+      }
+      var _0x1e207f = "                <div class=\"item\" data-id=\"" + _0x37360f.id + "\" data-index=\"" + _0x34f50b + "\">                    <div class=\"left\">                        <b class=\"title\">" + _0x37360f.title + "</b>                        <br>                        " + _variantHtml + "                        <input class=\"note\" type=\"text\" placeholder=\"+ " + $_config.text.cart_note + "..\" value=\"" + (_0x37360f.note ? _0x37360f.note : '') + "\">                        <b class=\"total\">" + separator(_0x37360f.price) + '</b>' + (_0x37360f.unit ? " <span class=\"unit\">/" + _0x37360f.unit + "</span>" : '') + "                    </div>                    <div class=\"right\">                        <a class=\"link\" href=\"" + _0x37360f.link + "\">                            <img class=\"img\" src=\"" + _0x37360f.img + "\"/>                            " + (_0x37360f.weight ? "<small class=\"weight\" title=\"" + $_config.text.cart_weight + "\">" + kg(_0x37360f.weight) + '</small>' : '') + "                        </a>                        <fieldset class=\"qty\">                            <button type=\"button\">-</button>                            <input type=\"number\" value=\"" + _0x37360f.qty + "\">                            <button type=\"button\">+</button>                        </fieldset>                    </div>                </div>";
       $("#cart .list").prepend(_0x1e207f);
       _0x462501 = _0x462501 + Number(_0x37360f.qty);
       _0x25b481 = _0x25b481 + Number(_0x37360f.price * _0x37360f.qty);
@@ -391,16 +412,23 @@ function product_convert() {
     var _0x142f07 = "            <div class=\"price\" data-price=\"" + Number(_0x3cd353.price) + "\" data-discount=\"" + Number(_0x3cd353.discount) + "\" data-unit=\"" + _0x3cd353.unit + "\" data-weight=\"" + Number(_0x3cd353.weight) + "\"></div>        ";
     if (_0x1aea8b.hasClass("is_post")) {
       _0x142f07 += "                <br>                <div class=\"option\">            ";
-      var _0x43816b = $('.variant', _0x1aea8b);
-      if ($('.status', _0x43816b).text() == 'on') {
-        _0x142f07 += "                    <div class=\"item variant\">                        <label>                            " + $(".label", _0x43816b).text() + "                        </label>                        <fieldset>                ";
-        $('.name', _0x43816b).each(function () {
-          if ($(this).text()) {
-            _0x142f07 += "                            <button " + ($(this).next(".price").text() ? "data-price=\"" + $(this).next(".price").text().replaceAll('.', '').replaceAll(',', '') + "\"" : '') + '>' + $(this).text() + "</button>                        ";
-          }
-        });
-        _0x142f07 += "                        </fieldset>                    </div>                ";
-      }
+      var _variantTables = $('table.variant', _0x1aea8b);
+      _variantTables.each(function (_grpIdx) {
+        var _vTable = $(this);
+        if ($('.status', _vTable).text().replace(/\n/g, '').trim() == 'on') {
+          var _vLabel = $('.label', _vTable).text().replace(/\n/g, '').trim() || 'Varian ' + (_grpIdx + 1);
+          _0x142f07 += "                    <div class=\"item variant\" data-group-index=\"" + _grpIdx + "\">                        <label>                            " + _vLabel + "                        </label>                        <fieldset>                ";
+          $('.name', _vTable).each(function () {
+            var _optName = $(this).text().replace(/\n/g, '').trim();
+            if (_optName) {
+              var _priceCell = $(this).next(".price").text().replaceAll('.', '').replaceAll(',', '').replaceAll(' ', '').trim();
+              var _extraPrice = _priceCell ? Number(_priceCell) : 0;
+              _0x142f07 += "                            <button type=\"button\" data-extra-price=\"" + _extraPrice + "\"" + (_extraPrice > 0 ? " title=\"+\" data-extra-formatted=\"(+" + separator(_extraPrice) + ")\"" : '') + ">" + _optName + "</button>                        ";
+            }
+          });
+          _0x142f07 += "                        </fieldset>                    </div>                ";
+        }
+      });
       _0x142f07 += "                <div class=\"item qty\">                    <label>                        " + $_config.text.product_qty + "                    </label>                    <fieldset>                        <button>-</button>                        <input type=\"number\" value=\"1\">                        <button>+</button>                    </fieldset>                </div>            ";
       _0x142f07 += "                </div>                <div class=\"cta " + (_0x3cd353.status == "off" ? 'disabled' : '') + "\">                    <button class=\"chat\" target=\"pop-chat\">                        <svg viewBox=\"0 0 512 512\" xmlns=\"http://www.w3.org/2000/svg\">                            <path d=\"M260.062 32C138.605 32 40.134 129.701 40.134 250.232c0 41.23 11.532 79.79 31.559 112.687L32 480l121.764-38.682c31.508 17.285 67.745 27.146 106.298 27.146C381.535 468.464 480 370.749 480 250.232 480 129.701 381.535 32 260.062 32zm109.362 301.11c-5.174 12.827-28.574 24.533-38.899 25.072-10.314.547-10.608 7.994-66.84-16.434-56.225-24.434-90.052-83.844-92.719-87.67-2.669-3.812-21.78-31.047-20.749-58.455 1.038-27.413 16.047-40.346 21.404-45.725 5.351-5.387 11.486-6.352 15.232-6.413 4.428-.072 7.296-.132 10.573-.011 3.274.124 8.192-.685 12.45 10.639 4.256 11.323 14.443 39.153 15.746 41.989 1.302 2.839 2.108 6.126.102 9.771-2.012 3.653-3.042 5.935-5.961 9.083-2.935 3.148-6.174 7.042-8.792 9.449-2.92 2.665-5.97 5.572-2.9 11.269 3.068 5.693 13.653 24.356 29.779 39.736 20.725 19.771 38.598 26.329 44.098 29.317 5.515 3.004 8.806 2.67 12.226-.929 3.404-3.599 14.639-15.746 18.596-21.169 3.955-5.438 7.661-4.373 12.742-2.329 5.078 2.052 32.157 16.556 37.673 19.551 5.51 2.989 9.193 4.529 10.51 6.9 1.317 2.38.901 13.531-4.271 26.359z\"></path>                        </svg>                    </button>            ";
       _0x142f07 += "                <button class=\"cart-add\">                    <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\">                        <path d=\"M387.9 373.7h49.2l17.5-75.4h-66.7zM387.9 448h.5c18.7 0 33.4-12.5 38.3-29.5l6-25.9h-44.8V448zM265.4 392.5h103.7V448H265.4zM75 373.7h49v-75.4H57.5zM142.9 192h103.7v87.5H142.9zM265.4 192h103.7v87.5H265.4zM85.5 418.3c4.7 17 19.4 29.7 38.1 29.7h.5v-55.5H79.4l6.1 25.8zM142.9 392.5h103.7V448H142.9zM265.4 298.3h103.7v75.4H265.4zM142.9 298.3h103.7v75.4H142.9z\" />                        <path d=\"M464 192h-47.9V96c0-17.6-14.4-32-32-32H127.9c-17.6 0-32 14.4-32 32v96H48c-10.3 0-17.9 9.6-15.6 19.6l19.7 67.9H124V106c0-7.7 6.3-14 14-14h236c7.7 0 14 6.3 14 14v173.5h72l19.6-67.9c2.3-10-5.3-19.6-15.6-19.6z\" />                    </svg>                    " + $_config.text.product_add + "                </button>            ";
@@ -424,53 +452,72 @@ function product_convert() {
     var _0x1eb356 = $('.price', _0x1aea8b).attr("data-unit");
     var _0x448650 = Number($(".price", _0x1aea8b).attr('data-price'));
     var _0x5b9cf1 = Number($('.price', _0x1aea8b).attr('data-discount'));
-    if (_0x5b9cf1) {
-      var _0x24aa4e = _0x448650 - _0x448650 * _0x5b9cf1 / 0x64;
-      if (_0x3cd353.mark) {
-        $(".price", _0x1aea8b).html('<small>' + _0x3cd353.mark + "</small><s>" + separator(_0x448650) + "</s><b data-price=\"" + _0x24aa4e + "\">" + separator(_0x24aa4e) + "</b>" + (_0x1eb356 ? "<span>/" + _0x1eb356 + "</span>" : ''));
-      } else {
-        $(".price", _0x1aea8b).html("<small>-" + _0x5b9cf1 + '%</small><s>' + separator(_0x448650) + "</s><b data-price=\"" + _0x24aa4e + "\">" + separator(_0x24aa4e) + "</b>" + (_0x1eb356 ? "<span>/" + _0x1eb356 + "</span>" : ''));
-      }
-      $("[itemprop=\"price\"]", this).attr("content", _0x24aa4e);
-    } else {
-      if (_0x3cd353.mark) {
-        $(".price", _0x1aea8b).html("<small>" + _0x3cd353.mark + "</small><b data-price=\"" + _0x448650 + "\">" + separator(_0x448650) + "</b>" + (_0x1eb356 ? '<span>/' + _0x1eb356 + "</span>" : ''));
-      } else {
-        $(".price", _0x1aea8b).html("<b data-price=\"" + _0x448650 + "\">" + separator(_0x448650) + "</b>" + (_0x1eb356 ? "<span>/" + _0x1eb356 + '</span>' : ''));
-      }
-      $("[itemprop=\"price\"]", this).attr("content", _0x448650);
-    }
-    $(".variant button", _0x1aea8b).each(function () {
-      var _0x3b7d4b = $(this).attr("data-price");
-      if (!_0x3b7d4b) {
-        var _0x547eb8 = $(".price", _0x1aea8b).attr("data-price");
-        $(this).attr('data-price', _0x547eb8);
-      }
-    });
-    $(".variant button", _0x1aea8b).on("click", function () {
-      $(".variant button", _0x1aea8b).removeClass("active");
-      $(this).addClass("active");
-      var _0x569efc = $(this).attr("data-price");
-      if (_0x569efc) {
-        if (_0x5b9cf1) {
-          var _0x5a42d5 = _0x569efc - _0x569efc * _0x5b9cf1 / 0x64;
-          if (_0x3cd353.mark) {
-            $(".price", _0x1aea8b).html("<small>" + _0x3cd353.mark + "</small><s>" + separator(_0x569efc) + "</s><b data-price=\"" + _0x5a42d5 + "\">" + separator(_0x5a42d5) + "</b>" + (_0x1eb356 ? "<span>/" + _0x1eb356 + "</span>" : ''));
-          } else {
-            $('.price', _0x1aea8b).html("<small>-" + _0x5b9cf1 + "%</small><s>" + separator(_0x569efc) + "</s><b data-price=\"" + _0x5a42d5 + "\">" + separator(_0x5a42d5) + '</b>' + (_0x1eb356 ? "<span>/" + _0x1eb356 + '</span>' : ''));
-          }
-          $("[itemprop=\"price\"]", this).attr("content", _0x5a42d5);
+
+    function update_calc_price() {
+      var _basePrice = Number($('.price', _0x1aea8b).attr('data-price')) || 0;
+      var _discountPercent = Number($('.price', _0x1aea8b).attr('data-discount')) || 0;
+      var _unitVal = $('.price', _0x1aea8b).attr('data-unit');
+      var _totalExtra = 0;
+
+      $('.item.variant', _0x1aea8b).each(function () {
+        var _activeBtn = $('button.active', this);
+        if (_activeBtn.length) {
+          _totalExtra += Number(_activeBtn.attr('data-extra-price')) || 0;
+        }
+      });
+
+      var _baseDiscounted = _discountPercent ? (_basePrice - (_basePrice * _discountPercent / 100)) : _basePrice;
+      var _finalPay = _baseDiscounted + _totalExtra;
+      var _normalStrike = _basePrice + _totalExtra;
+
+      var _htmlPrice = '';
+      if (_discountPercent) {
+        if (_0x3cd353.mark) {
+          _htmlPrice = '<small>' + _0x3cd353.mark + '</small><s>' + separator(_normalStrike) + '</s><b data-price="' + _finalPay + '">' + separator(_finalPay) + '</b>' + (_unitVal ? '<span>/' + _unitVal + '</span>' : '');
         } else {
-          if (_0x3cd353.mark) {
-            $(".price", _0x1aea8b).html("<small>" + _0x3cd353.mark + "</small><b data-price=\"" + _0x569efc + "\">" + separator(_0x569efc) + '</b>' + (_0x1eb356 ? "<span>/" + _0x1eb356 + "</span>" : ''));
-          } else {
-            $('.price', _0x1aea8b).html("<b data-price=\"" + _0x569efc + "\">" + separator(_0x569efc) + '</b>' + (_0x1eb356 ? "<span>/" + _0x1eb356 + "</span>" : ''));
-          }
-          $("[itemprop=\"price\"]", this).attr("content", _0x569efc);
+          _htmlPrice = '<small>-' + _discountPercent + '%</small><s>' + separator(_normalStrike) + '</s><b data-price="' + _finalPay + '">' + separator(_finalPay) + '</b>' + (_unitVal ? '<span>/' + _unitVal + '</span>' : '');
+        }
+      } else {
+        if (_0x3cd353.mark) {
+          _htmlPrice = '<small>' + _0x3cd353.mark + '</small><b data-price="' + _finalPay + '">' + separator(_finalPay) + '</b>' + (_unitVal ? '<span>/' + _unitVal + '</span>' : '');
+        } else {
+          _htmlPrice = '<b data-price="' + _finalPay + '">' + separator(_finalPay) + '</b>' + (_unitVal ? '<span>/' + _unitVal + '</span>' : '');
         }
       }
-    });
-    $(".variant button:first", _0x1aea8b).trigger("click");
+
+      $('.price', _0x1aea8b).html(_htmlPrice);
+      $("[itemprop=\"price\"]", _0x1aea8b).attr('content', _finalPay);
+    }
+
+    if (_0x1aea8b.hasClass("is_post") && $('.item.variant', _0x1aea8b).length) {
+      $('.item.variant', _0x1aea8b).each(function () {
+        var _grp = $(this);
+        $('button', _grp).on('click', function () {
+          $('button', _grp).removeClass('active');
+          $(this).addClass('active');
+          update_calc_price();
+        });
+        $('button:first', _grp).addClass('active');
+      });
+      update_calc_price();
+    } else {
+      if (_0x5b9cf1) {
+        var _0x24aa4e = _0x448650 - _0x448650 * _0x5b9cf1 / 0x64;
+        if (_0x3cd353.mark) {
+          $(".price", _0x1aea8b).html('<small>' + _0x3cd353.mark + "</small><s>" + separator(_0x448650) + "</s><b data-price=\"" + _0x24aa4e + "\">" + separator(_0x24aa4e) + "</b>" + (_0x1eb356 ? "<span>/" + _0x1eb356 + "</span>" : ''));
+        } else {
+          $(".price", _0x1aea8b).html("<small>-" + _0x5b9cf1 + '%</small><s>' + separator(_0x448650) + "</s><b data-price=\"" + _0x24aa4e + "\">" + separator(_0x24aa4e) + "</b>" + (_0x1eb356 ? "<span>/" + _0x1eb356 + "</span>" : ''));
+        }
+        $("[itemprop=\"price\"]", this).attr("content", _0x24aa4e);
+      } else {
+        if (_0x3cd353.mark) {
+          $(".price", _0x1aea8b).html("<small>" + _0x3cd353.mark + "</small><b data-price=\"" + _0x448650 + "\">" + separator(_0x448650) + "</b>" + (_0x1eb356 ? '<span>/' + _0x1eb356 + "</span>" : ''));
+        } else {
+          $(".price", _0x1aea8b).html("<b data-price=\"" + _0x448650 + "\">" + separator(_0x448650) + "</b>" + (_0x1eb356 ? "<span>/" + _0x1eb356 + '</span>' : ''));
+        }
+        $("[itemprop=\"price\"]", this).attr("content", _0x448650);
+      }
+    }
     $(".qty input", _0x1aea8b).on("change", function () {
       var _0x360f12 = Number($(".qty input", _0x1aea8b).val());
       if (_0x360f12 < 0x1) {
