@@ -43,16 +43,22 @@ function initTheme() {
 if (typeof $ !== 'undefined') {
   initTheme();
 }
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initTheme);
-  window.addEventListener('load', initTheme);
-  if (typeof $ !== 'undefined') {
-    $(document).ready(initTheme);
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTheme);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('load', initTheme);
+    }
+    if (typeof $ !== 'undefined') {
+      $(document).ready(initTheme);
+    }
+  } else {
+    setTimeout(initTheme, 1);
   }
-} else {
-  setTimeout(initTheme, 1);
 }
-window.onload = initTheme;
+if (typeof window !== 'undefined') {
+  window.onload = initTheme;
+}
 
 /**
  * Shopping Cart Module
@@ -358,24 +364,28 @@ function cart() {
         customerInfo[name] = val;
       });
 
-      var waMessage = ($_config.text.checkout_intro || 'Halo admin, saya ingin memesan:') + '\n\n';
+      var lines = [];
+      lines.push(($_config.text && $_config.text.checkout_intro) ? $_config.text.checkout_intro : 'Halo admin, saya ingin memesan:');
+      lines.push('====================');
+
       var totalItemCount = 0;
       var grandTotalPrice = 0;
       var grandTotalWeight = 0;
-      var itemIndex = 0;
 
       for (var idx = 0; idx < cartList.length; idx++) {
         var currentItem = cartList[idx];
-        itemIndex++;
+        var itemNum = (cartList.length > 1) ? (idx + 1) + '. ' : '';
+        lines.push('*' + itemNum + currentItem.title + '*');
 
-        // Format each product variation on a separate line
-        var variantLines = '';
         if (currentItem.variants && currentItem.variants.length) {
           for (var v = 0; v < currentItem.variants.length; v++) {
-            variantLines += '                    [tab]' + currentItem.variants[v].label + ' : *' + currentItem.variants[v].value + '*\n';
+            var vObj = currentItem.variants[v];
+            if (vObj && vObj.label && vObj.value) {
+              lines.push('• ' + vObj.label + ': *' + vObj.value + '*');
+            }
           }
-        } else if (currentItem.variant && currentItem.variant.label) {
-          variantLines += '                    [tab]' + currentItem.variant.label + ' : *' + currentItem.variant.value + '*\n';
+        } else if (currentItem.variant && currentItem.variant.label && currentItem.variant.value) {
+          lines.push('• ' + currentItem.variant.label + ': *' + currentItem.variant.value + '*');
         }
 
         var itemQty = Number(currentItem.qty) || 1;
@@ -383,32 +393,93 @@ function cart() {
         var itemWeight = Number(currentItem.weight) || 0;
         var itemSubtotal = itemPrice * itemQty;
 
-        waMessage += '                    ' + (cartList.length > 1 ? itemIndex + '. ' : '') + '*' + currentItem.title + '*\n\n'
-          + variantLines
-          + '                    [tab]' + ($_config.text.cart_qty_n_price || 'Qty & Harga') + ' : *' + itemQty + '* x ' + separator(itemPrice) + ' = *' + separator(itemSubtotal) + '*\n'
-          + '                    [tab]' + ($_config.text.cart_note || 'Catatan') + ' : ' + (currentItem.note ? '*' + currentItem.note + '*' : '-') + '\n                    \n                ';
+        var qtyPriceLabel = ($_config.text && $_config.text.cart_qty_n_price) ? $_config.text.cart_qty_n_price : 'Qty & Harga';
+        lines.push('• ' + qtyPriceLabel + ': *' + itemQty + '* x ' + separator(itemPrice) + ' = *' + separator(itemSubtotal) + '*');
+
+        if (currentItem.note && String(currentItem.note).trim()) {
+          var noteLabel = ($_config.text && $_config.text.cart_note) ? $_config.text.cart_note : 'Catatan';
+          lines.push('• ' + noteLabel + ': _' + String(currentItem.note).trim() + '_');
+        }
 
         totalItemCount += itemQty;
         grandTotalPrice += itemSubtotal;
         grandTotalWeight += (itemWeight * itemQty);
+
+        if (idx < cartList.length - 1) {
+          lines.push('');
+        }
       }
 
-      waMessage += '                = = = = = = = = = = = = = = =\n                \n'
-        + (grandTotalWeight ? ($_config.text.cart_weight || 'Berat') + ' = *' + kg(grandTotalWeight) + '*\n' : '')
-        + '                ' + ($_config.text.cart_total || 'Total') + ' ( ' + totalItemCount + ' ' + ($_config.text.cart_order || 'Pesanan') + ' ) = *' + separator(grandTotalPrice) + '*\n                \n                = = = = = = = = = = = = = = =\n                \n                '
-        + ($_config.text.checkout_info || 'Informasi Pemesan') + ' :\n                \n                *'
-        + (customerInfo.name || '-') + '* ( ' + (customerInfo.phone || '-') + ' )\n                \n'
-        + (customerInfo.email ? '*' + ($_config.text.checkout_email || 'Email') + '* : ' + customerInfo.email + '\n\n' : '')
-        + (customerInfo.address ? '*' + ($_config.text.checkout_address || 'Alamat') + '* :\n\n' + customerInfo.address + '\n\n' : '')
-        + '*' + ($_config.text.checkout_note || 'Catatan') + '* : ' + (customerInfo.note ? '\n\n' + customerInfo.note : '-') + '\n\n'
-        + (customerInfo.shipping ? '*' + ($_config.text.checkout_shipping || 'Pengiriman') + '* : ' + customerInfo.shipping + '\n' + ($_config.checkout_form_shipping[customerInfo.shipping] ? $_config.checkout_form_shipping[customerInfo.shipping].info : '') + '\n\n' : '')
-        + (customerInfo.payment ? '*' + ($_config.text.checkout_payment || 'Pembayaran') + '* : ' + customerInfo.payment + '\n' + ($_config.checkout_form_payment[customerInfo.payment] ? $_config.checkout_form_payment[customerInfo.payment].info : '') + '\n\n' : '')
-        + '                via. ' + location.protocol + '//' + location.hostname + '            ';
+      lines.push('====================');
+      var totalLabel = ($_config.text && $_config.text.cart_total) ? $_config.text.cart_total : 'Total';
+      var orderLabel = ($_config.text && $_config.text.cart_order) ? $_config.text.cart_order : 'Pesanan';
+      lines.push(totalLabel + ': *' + totalItemCount + ' ' + orderLabel + '* (*' + separator(grandTotalPrice) + '*)');
 
-      waMessage = waMessage.replace(/  +/g, ' ').replace(/\[tab\]/g, '    ');
-      waMessage = encodeURIComponent(waMessage);
+      if (grandTotalWeight > 0) {
+        var weightLabel = ($_config.text && $_config.text.cart_weight) ? $_config.text.cart_weight : 'Berat';
+        lines.push(weightLabel + ': *' + kg(grandTotalWeight) + '*');
+      }
 
-      var waRedirectUrl = 'https://api.whatsapp.com/send?phone=' + $_config.whatsapp + '&text=' + waMessage;
+      lines.push('====================');
+      var infoLabel = ($_config.text && $_config.text.checkout_info) ? $_config.text.checkout_info : 'Informasi Pemesan';
+      lines.push('*' + infoLabel + ':*');
+
+      var nameLabel = ($_config.text && $_config.text.checkout_name) ? $_config.text.checkout_name : 'Nama';
+      var nameVal = customerInfo.name ? String(customerInfo.name).trim() : '-';
+      var phoneVal = customerInfo.phone ? String(customerInfo.phone).trim() : '';
+      var nameLine = '• ' + nameLabel + ': *' + nameVal + '*';
+      if (phoneVal) {
+        nameLine += ' (' + phoneVal + ')';
+      }
+      lines.push(nameLine);
+
+      if (customerInfo.email && String(customerInfo.email).trim()) {
+        var emailLabel = ($_config.text && $_config.text.checkout_email) ? $_config.text.checkout_email : 'Email';
+        lines.push('• ' + emailLabel + ': ' + String(customerInfo.email).trim());
+      }
+
+      if (customerInfo.address && String(customerInfo.address).trim()) {
+        var addrLabel = ($_config.text && $_config.text.checkout_address) ? $_config.text.checkout_address : 'Alamat';
+        var cleanAddr = String(customerInfo.address).trim().replace(/[\r\n]+/g, ', ');
+        lines.push('• ' + addrLabel + ': ' + cleanAddr);
+      }
+
+      if (customerInfo.shipping && String(customerInfo.shipping).trim()) {
+        var shipLabel = ($_config.text && $_config.text.checkout_shipping) ? $_config.text.checkout_shipping : 'Pengiriman';
+        var shipTitle = String(customerInfo.shipping).trim();
+        var shipInfo = ($_config.checkout_form_shipping && $_config.checkout_form_shipping[shipTitle] && $_config.checkout_form_shipping[shipTitle].info)
+          ? String($_config.checkout_form_shipping[shipTitle].info).trim()
+          : '';
+        lines.push('• ' + shipLabel + ': *' + shipTitle + '*' + (shipInfo ? ' (' + shipInfo + ')' : ''));
+      }
+
+      if (customerInfo.payment && String(customerInfo.payment).trim()) {
+        var payLabel = ($_config.text && $_config.text.checkout_payment) ? $_config.text.checkout_payment : 'Pembayaran';
+        var payTitle = String(customerInfo.payment).trim();
+        var payInfo = ($_config.checkout_form_payment && $_config.checkout_form_payment[payTitle] && $_config.checkout_form_payment[payTitle].info)
+          ? String($_config.checkout_form_payment[payTitle].info).trim()
+          : '';
+        lines.push('• ' + payLabel + ': *' + payTitle + '*' + (payInfo ? ' (' + payInfo + ')' : ''));
+      }
+
+      if (customerInfo.note && String(customerInfo.note).trim()) {
+        var custNoteLabel = ($_config.text && $_config.text.checkout_note) ? $_config.text.checkout_note : 'Catatan';
+        lines.push('• ' + custNoteLabel + ': _' + String(customerInfo.note).trim() + '_');
+      }
+
+      lines.push('');
+      lines.push('via ' + location.protocol + '//' + location.hostname);
+
+      var waMessage = encodeURIComponent(lines.join('\n'));
+      var waNumber = String($_config.whatsapp || '').replace(/[^0-9]/g, '');
+      if (/^08[0-9]+$/.test(waNumber)) {
+        waNumber = '62' + waNumber.slice(1);
+      }
+      if (!waNumber) {
+        waNumber = $_config.whatsapp;
+      }
+
+      var waRedirectUrl = 'https://api.whatsapp.com/send?phone=' + waNumber + '&text=' + waMessage;
       try {
         localStorage.removeItem('cart');
       } catch (e) {}
