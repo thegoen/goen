@@ -18,24 +18,41 @@ function license() {
 
 license();
 
-// Initialize all theme modules on page load
-window.onload = function () {
-  etc();
-  slideshow();
-  product_convert();
-  product_sort();
-  shortcode();
-  cart();
-  lazyload();
-  lightbox();
-  pop();
-  popwin();
-  timeago();
-  translate();
-  if (typeof custom_js === 'function') {
-    custom_js();
+// Robust initialization handling (runs once when DOM/window is ready)
+var _theme_initialized = false;
+function initTheme() {
+  if (_theme_initialized) return;
+  _theme_initialized = true;
+
+  try { etc(); } catch (e) { console.warn('[Theme] etc error:', e); }
+  try { slideshow(); } catch (e) { console.warn('[Theme] slideshow error:', e); }
+  try { product_convert(); } catch (e) { console.warn('[Theme] product_convert error:', e); }
+  try { product_sort(); } catch (e) { console.warn('[Theme] product_sort error:', e); }
+  try { shortcode(); } catch (e) { console.warn('[Theme] shortcode error:', e); }
+  try { cart(); } catch (e) { console.warn('[Theme] cart error:', e); }
+  try { lazyload(); } catch (e) { console.warn('[Theme] lazyload error:', e); }
+  try { lightbox(); } catch (e) { console.warn('[Theme] lightbox error:', e); }
+  try { pop(); } catch (e) { console.warn('[Theme] pop error:', e); }
+  try { popwin(); } catch (e) { console.warn('[Theme] popwin error:', e); }
+  try { timeago(); } catch (e) { console.warn('[Theme] timeago error:', e); }
+  try { translate(); } catch (e) { console.warn('[Theme] translate error:', e); }
+  try { if (typeof custom_js === 'function') custom_js(); } catch (e) { console.warn('[Theme] custom_js error:', e); }
+}
+
+// Ensure execution immediately if jQuery is loaded, with fallbacks for DOM ready / load
+if (typeof $ !== 'undefined') {
+  initTheme();
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initTheme);
+  window.addEventListener('load', initTheme);
+  if (typeof $ !== 'undefined') {
+    $(document).ready(initTheme);
   }
-};
+} else {
+  setTimeout(initTheme, 1);
+}
+window.onload = initTheme;
 
 /**
  * Shopping Cart Module
@@ -44,31 +61,31 @@ window.onload = function () {
 function cart() {
   // Build checkout customer form fields based on configuration
   var checkoutFormHtml = '        <fieldset>'
-    + '            <input type="text" name="name" placeholder="' + $_config.text.checkout_name + '" required>'
-    + '            <input type="tel" name="phone" placeholder="' + $_config.text.checkout_phone + '" required>'
+    + '            <input type="text" name="name" placeholder="' + ($_config.text.checkout_name || 'Nama') + '" required>'
+    + '            <input type="tel" name="phone" placeholder="' + ($_config.text.checkout_phone || 'Telepon') + '" required>'
     + '        </fieldset>    ';
 
-  if ($_config.checkout_form.email) {
-    checkoutFormHtml += '            <input type="email" name="email" placeholder="' + $_config.text.checkout_email + '" required>        ';
+  if ($_config.checkout_form && $_config.checkout_form.email) {
+    checkoutFormHtml += '            <input type="email" name="email" placeholder="' + ($_config.text.checkout_email || 'Email') + '" required>        ';
   }
 
-  if ($_config.checkout_form.address) {
-    checkoutFormHtml += '            <textarea name="address" placeholder="' + $_config.text.checkout_address + '" required></textarea>        ';
+  if ($_config.checkout_form && $_config.checkout_form.address) {
+    checkoutFormHtml += '            <textarea name="address" placeholder="' + ($_config.text.checkout_address || 'Alamat') + '" required></textarea>        ';
   }
 
-  if ($_config.checkout_form.note) {
-    checkoutFormHtml += '            <textarea name="note" placeholder="' + $_config.text.checkout_note + '"></textarea>        ';
+  if ($_config.checkout_form && $_config.checkout_form.note) {
+    checkoutFormHtml += '            <textarea name="note" placeholder="' + ($_config.text.checkout_note || 'Catatan') + '"></textarea>        ';
   }
 
   // Shipping courier options
-  if ($_config.checkout_form.shipping) {
+  if ($_config.checkout_form && $_config.checkout_form.shipping && $_config.checkout_form_shipping) {
     checkoutFormHtml += '            <select name="shipping" required>'
-      + '                <option value="" selected hidden>' + $_config.text.checkout_shipping + '</option>'
-      + '                <optgroup label="' + $_config.text.checkout_shipping + ' :">        ';
+      + '                <option value="" selected hidden>' + ($_config.text.checkout_shipping || 'Pengiriman') + '</option>'
+      + '                <optgroup label="' + ($_config.text.checkout_shipping || 'Pengiriman') + ' :">        ';
 
     for (var courierKey in $_config.checkout_form_shipping) {
       var courier = $_config.checkout_form_shipping[courierKey];
-      if (courier.status === true) {
+      if (courier && courier.status === true) {
         $('<img src="' + courier.img + '"/>').on('load', function () {});
         checkoutFormHtml += '                    <option value="' + courierKey + '" data-info="' + courier.info + '" data-img="' + courier.img + '">'
           + '                        ' + courierKey
@@ -79,15 +96,15 @@ function cart() {
   }
 
   // Payment method options
-  if ($_config.checkout_form.payment) {
-    $('#contact').append('<p class="shippay"><b>' + $_config.text.checkout_payment + ' :</b></p>');
+  if ($_config.checkout_form && $_config.checkout_form.payment && $_config.checkout_form_payment) {
+    $('#contact').append('<p class="shippay"><b>' + ($_config.text.checkout_payment || 'Pembayaran') + ' :</b></p>');
     checkoutFormHtml += '            <select name="payment" required>'
-      + '                <option value="" selected hidden>' + $_config.text.checkout_payment + '</option>'
-      + '                <optgroup label="' + $_config.text.checkout_payment + ' :">        ';
+      + '                <option value="" selected hidden>' + ($_config.text.checkout_payment || 'Pembayaran') + '</option>'
+      + '                <optgroup label="' + ($_config.text.checkout_payment || 'Pembayaran') + ' :">        ';
 
     for (var paymentKey in $_config.checkout_form_payment) {
       var payment = $_config.checkout_form_payment[paymentKey];
-      if (payment.status === true) {
+      if (payment && payment.status === true) {
         $('#contact .shippay').append(
           '<figure><img alt="' + paymentKey + '" src="' + payment.img + '" width="24" height="24"/><figcaption>' + paymentKey + '</figcaption></figure>'
         );
@@ -100,10 +117,13 @@ function cart() {
     checkoutFormHtml += '                </optgroup>            </select>        ';
   }
 
-  $('#cart .form').append(checkoutFormHtml);
+  // Only append if not already appended
+  if ($('#cart .form').children('fieldset').length === 0) {
+    $('#cart .form').append(checkoutFormHtml);
+  }
 
   // Show details when a shipping or payment option is selected
-  $('#cart .form').on('change', 'select', function () {
+  $('#cart .form').off('change', 'select').on('change', 'select', function () {
     var $select = $(this);
     var selectedVal = $select.val();
     var $selectedOption = $('option:selected', $select);
@@ -111,43 +131,60 @@ function cart() {
     var optionImg = $selectedOption.attr('data-img');
 
     $select.prev('.detail').remove();
-    $('<img src="' + optionImg + '"/>').on('load', function () {
-      $(
-        '                <div class="detail">'
-        + '                    <img src="' + optionImg + '">'
-        + '                    <h4>' + selectedVal + '</h4>'
-        + '                    <p>' + optionInfo + '</p>'
-        + '                </div>            '
-      ).insertBefore($select).hide().fadeIn();
-    });
+    if (optionImg) {
+      $('<img src="' + optionImg + '"/>').on('load', function () {
+        $(
+          '                <div class="detail">'
+          + '                    <img src="' + optionImg + '">'
+          + '                    <h4>' + selectedVal + '</h4>'
+          + '                    <p>' + optionInfo + '</p>'
+          + '                </div>            '
+        ).insertBefore($select).hide().fadeIn();
+      });
+    }
   });
 
-  $('#cart .form').on('click', '.detail', function () {
+  $('#cart .form').off('click', '.detail').on('click', '.detail', function () {
     $(this).next('select').focus();
   });
 
   // Load existing cart from localStorage
   var cartList = [];
-  if (localStorage.cart) {
-    try {
-      cartList = JSON.parse(localStorage.cart);
-    } catch (e) {
-      cartList = [];
+  try {
+    if (window.localStorage && localStorage.getItem('cart')) {
+      cartList = JSON.parse(localStorage.getItem('cart')) || [];
+      if (!Array.isArray(cartList)) {
+        cartList = [];
+      }
     }
-    renderCart();
+  } catch (e) {
+    cartList = [];
   }
 
+  // Always run renderCart once on initialization
+  renderCart();
+
   // Handle Add to Cart button click
-  $(document).on('click', '.cart-add', function () {
-    var $product = $(this).closest('.product, article');
+  $(document).off('click', '.cart-add').on('click', '.cart-add', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var $product = $(this).closest('.product, article, [itemscope]');
+    if (!$product.length) {
+      $product = $(this).closest('#main, body');
+    }
+
     var productId = $product.attr('id') ? $product.attr('id') : 'prod';
-    var productImg = $('.img', $product).attr('src') || '';
+    var productImg = $('.img', $product).attr('src') || $('.img', $product).attr('data-src') || '';
     var productLink = location.href;
-    var productTitle = $('.title', $product).text().replace(/\n/g, '').replaceAll('  ', '').trim();
+    var productTitle = $('.title', $product).text().replace(/[\r\n]/g, '').replace(/\s{2,}/g, ' ').trim();
     var productPrice = Number($('.price b', $product).attr('data-price')) || Number($('.price', $product).attr('data-price')) || 0;
     var productWeight = Number($('.price', $product).attr('data-weight')) || 0;
     var productUnit = $('.price', $product).attr('data-unit') || '';
-    var productQty = Number($('.qty input', $product).val()) || 1;
+    var productQty = parseInt($('.qty input', $product).val(), 10);
+    if (isNaN(productQty) || productQty < 1) {
+      productQty = 1;
+    }
 
     // Collect all selected variations across all groups
     var selectedVariants = [];
@@ -155,10 +192,14 @@ function cart() {
 
     if ($('.item.variant', $product).length) {
       $('.item.variant', $product).each(function () {
-        var groupLabel = $('label', this).text().replace(/\n/g, '').replaceAll('  ', '').trim();
+        var groupLabel = $('label', this).text().replace(/[\r\n]/g, '').replace(/\s{2,}/g, ' ').trim();
         var $activeBtn = $('button.active', this);
+        if (!$activeBtn.length) {
+          $activeBtn = $('button:first', this);
+          $activeBtn.addClass('active');
+        }
         if ($activeBtn.length) {
-          var optionVal = $activeBtn.text().replace(/\n/g, '').replaceAll('  ', '').trim();
+          var optionVal = $activeBtn.text().replace(/[\r\n]/g, '').replace(/\s{2,}/g, ' ').trim();
           selectedVariants.push({
             label: groupLabel,
             value: optionVal
@@ -169,31 +210,35 @@ function cart() {
 
       // Form unique cart item ID by appending variant combinations
       if (variantIdParts.length > 0) {
-        productId = productId + '|' + variantIdParts.join('|');
+        productId = String(productId) + '|' + variantIdParts.join('|');
       }
     }
 
-    // Trigger cart button bounce animation
-    $('#cart-btn').removeClass('open');
-    setTimeout(function () {
-      $('#cart-btn').addClass('open');
-    }, 100);
-
-    // If item with same ID already exists in cart, update its quantity
+    // If item with same ID already exists in cart, increment quantity
+    var existingIndex = -1;
     for (var i = 0; i < cartList.length; i++) {
-      if (cartList[i].id === productId) {
-        cartList[i].qty = productQty;
-        saveCart();
-        renderCart();
-        return;
+      if (String(cartList[i].id) === String(productId)) {
+        existingIndex = i;
+        break;
       }
+    }
+
+    if (existingIndex >= 0) {
+      cartList[existingIndex].qty = Number(cartList[existingIndex].qty || 0) + Number(productQty);
+      if (productPrice > 0) {
+        cartList[existingIndex].price = productPrice;
+      }
+      saveCart();
+      renderCart();
+      bounceCartButton();
+      return;
     }
 
     // Otherwise, push new cart item
     var cartItem = {
-      id: productId,
+      id: String(productId),
       img: productImg,
-      title: productTitle,
+      title: productTitle || 'Produk',
       link: productLink,
       variants: selectedVariants,
       variant: selectedVariants.length ? selectedVariants[0] : '',
@@ -206,23 +251,34 @@ function cart() {
     cartList.push(cartItem);
     saveCart();
     renderCart();
+    bounceCartButton();
   });
 
+  function bounceCartButton() {
+    $('#cart-btn').removeClass('open');
+    setTimeout(function () {
+      $('#cart-btn').addClass('open');
+    }, 100);
+  }
+
   // Open & close cart drawer
-  $('#cart-btn, .cart-btn-head').on('click', function () {
+  $(document).off('click', '#cart-btn, .cart-btn-head').on('click', '#cart-btn, .cart-btn-head', function (e) {
+    e.preventDefault();
+    renderCart();
     $('#cart').addClass('open');
     $('body').css('overflow', 'hidden');
   });
 
-  $('#cart-close').on('click', function () {
+  $(document).off('click', '#cart-close').on('click', '#cart-close', function (e) {
+    e.preventDefault();
     $('#cart').removeClass('open');
     $('body').css('overflow', 'auto');
   });
 
   // Adjust item quantity in cart (+ / -)
-  $('#cart').on('click', '.qty button', function () {
+  $('#cart').off('click', '.qty button').on('click', '.qty button', function () {
     var $item = $(this).closest('.item');
-    var currentQty = Number($('.qty input', $item).val());
+    var currentQty = Number($('.qty input', $item).val()) || 1;
     if ($(this).text() === '-') {
       currentQty = currentQty - 1;
     } else {
@@ -232,17 +288,19 @@ function cart() {
   });
 
   // Handle quantity change & item removal confirmation
-  $('#cart').on('change', '.item .qty input', function () {
+  $('#cart').off('change', '.item .qty input').on('change', '.item .qty input', function () {
     var $item = $(this).closest('.item');
     var itemIndex = Number($item.attr('data-index'));
     var newQty = Number($(this).val());
 
     if (newQty > 0) {
-      cartList[itemIndex].qty = newQty;
+      if (cartList[itemIndex]) {
+        cartList[itemIndex].qty = newQty;
+      }
       saveCart();
       renderCart();
       return;
-    } else if (!confirm($_config.text.cart_remove)) {
+    } else if (!confirm(($_config.text && $_config.text.cart_remove) ? $_config.text.cart_remove : 'Hapus item ini?')) {
       newQty = 1;
       $('.qty input', $item).val(newQty).trigger('change');
     } else {
@@ -253,40 +311,44 @@ function cart() {
   });
 
   // Save per-item note in cart
-  $('#cart').on('change', '.item .note', function () {
+  $('#cart').off('change', '.item .note').on('change', '.item .note', function () {
     var $item = $(this).closest('.item');
     var itemIndex = Number($item.attr('data-index'));
     var noteVal = $(this).val();
-    cartList[itemIndex].note = noteVal;
+    if (cartList[itemIndex]) {
+      cartList[itemIndex].note = noteVal;
+    }
     saveCart();
     renderCart();
   });
 
   // Remember buyer information in localStorage
   var buyerData = {};
-  $('#cart').on('change', '[name]', function () {
+  $('#cart').off('change', '[name]').on('change', '[name]', function () {
     var fieldName = $(this).attr('name');
     var fieldValue = $(this).val();
     if (fieldName !== 'note' && fieldName !== 'shipping' && fieldName !== 'payment') {
       buyerData[fieldName] = fieldValue;
-      localStorage.buyer = JSON.stringify(buyerData);
+      try {
+        localStorage.setItem('buyer', JSON.stringify(buyerData));
+      } catch (e) {}
     }
   });
 
-  if (localStorage.buyer) {
-    try {
-      buyerData = JSON.parse(localStorage.buyer);
+  try {
+    if (window.localStorage && localStorage.getItem('buyer')) {
+      buyerData = JSON.parse(localStorage.getItem('buyer')) || {};
       for (var fieldKey in buyerData) {
         $('#cart .form [name=' + fieldKey + ']').val(buyerData[fieldKey]).trigger('change');
       }
-    } catch (e) {}
-  }
+    }
+  } catch (e) {}
 
   // Handle Checkout submission to WhatsApp
-  $('#cart').on('submit', function (e) {
+  $('#cart').off('submit').on('submit', function (e) {
     e.preventDefault();
 
-    if (!confirm($_config.text.checkout_confirm)) {
+    if (!confirm(($_config.text && $_config.text.checkout_confirm) ? $_config.text.checkout_confirm : 'Lanjutkan ke WhatsApp?')) {
       return;
     } else {
       var customerInfo = {};
@@ -296,7 +358,7 @@ function cart() {
         customerInfo[name] = val;
       });
 
-      var waMessage = $_config.text.checkout_intro + '\n\n';
+      var waMessage = ($_config.text.checkout_intro || 'Halo admin, saya ingin memesan:') + '\n\n';
       var totalItemCount = 0;
       var grandTotalPrice = 0;
       var grandTotalWeight = 0;
@@ -312,46 +374,56 @@ function cart() {
           for (var v = 0; v < currentItem.variants.length; v++) {
             variantLines += '                    [tab]' + currentItem.variants[v].label + ' : *' + currentItem.variants[v].value + '*\n';
           }
-        } else if (currentItem.variant) {
+        } else if (currentItem.variant && currentItem.variant.label) {
           variantLines += '                    [tab]' + currentItem.variant.label + ' : *' + currentItem.variant.value + '*\n';
         }
 
-        var itemSubtotal = currentItem.price * currentItem.qty;
+        var itemQty = Number(currentItem.qty) || 1;
+        var itemPrice = Number(currentItem.price) || 0;
+        var itemWeight = Number(currentItem.weight) || 0;
+        var itemSubtotal = itemPrice * itemQty;
+
         waMessage += '                    ' + (cartList.length > 1 ? itemIndex + '. ' : '') + '*' + currentItem.title + '*\n\n'
           + variantLines
-          + '                    [tab]' + $_config.text.cart_qty_n_price + ' : *' + currentItem.qty + '* x ' + separator(currentItem.price) + ' = *' + separator(itemSubtotal) + '*\n'
-          + '                    [tab]' + $_config.text.cart_note + ' : ' + (currentItem.note ? '*' + currentItem.note + '*' : '-') + '\n                    \n                ';
+          + '                    [tab]' + ($_config.text.cart_qty_n_price || 'Qty & Harga') + ' : *' + itemQty + '* x ' + separator(itemPrice) + ' = *' + separator(itemSubtotal) + '*\n'
+          + '                    [tab]' + ($_config.text.cart_note || 'Catatan') + ' : ' + (currentItem.note ? '*' + currentItem.note + '*' : '-') + '\n                    \n                ';
 
-        totalItemCount += Number(currentItem.qty);
-        grandTotalPrice += Number(itemSubtotal);
-        grandTotalWeight += Number(currentItem.weight * currentItem.qty);
+        totalItemCount += itemQty;
+        grandTotalPrice += itemSubtotal;
+        grandTotalWeight += (itemWeight * itemQty);
       }
 
       waMessage += '                = = = = = = = = = = = = = = =\n                \n'
-        + (grandTotalWeight ? $_config.text.cart_weight + ' = *' + kg(grandTotalWeight) + '*\n' : '')
-        + '                ' + $_config.text.cart_total + ' ( ' + totalItemCount + ' ' + $_config.text.cart_order + ' ) = *' + separator(grandTotalPrice) + '*\n                \n                = = = = = = = = = = = = = = =\n                \n                '
-        + $_config.text.checkout_info + ' :\n                \n                *'
-        + customerInfo.name + '* ( ' + customerInfo.phone + ' )\n                \n'
-        + (customerInfo.email ? '*' + $_config.text.checkout_email + '* : ' + customerInfo.email + '\n\n' : '')
-        + (customerInfo.address ? '*' + $_config.text.checkout_address + '* :\n\n' + customerInfo.address + '\n\n' : '')
-        + '*' + $_config.text.checkout_note + '* : ' + (customerInfo.note ? '\n\n' + customerInfo.note : '-') + '\n\n'
-        + (customerInfo.shipping ? '*' + $_config.text.checkout_shipping + '* : ' + customerInfo.shipping + '\n' + ($_config.checkout_form_shipping[customerInfo.shipping] ? $_config.checkout_form_shipping[customerInfo.shipping].info : '') + '\n\n' : '')
-        + (customerInfo.payment ? '*' + $_config.text.checkout_payment + '* : ' + customerInfo.payment + '\n' + ($_config.checkout_form_payment[customerInfo.payment] ? $_config.checkout_form_payment[customerInfo.payment].info : '') + '\n\n' : '')
+        + (grandTotalWeight ? ($_config.text.cart_weight || 'Berat') + ' = *' + kg(grandTotalWeight) + '*\n' : '')
+        + '                ' + ($_config.text.cart_total || 'Total') + ' ( ' + totalItemCount + ' ' + ($_config.text.cart_order || 'Pesanan') + ' ) = *' + separator(grandTotalPrice) + '*\n                \n                = = = = = = = = = = = = = = =\n                \n                '
+        + ($_config.text.checkout_info || 'Informasi Pemesan') + ' :\n                \n                *'
+        + (customerInfo.name || '-') + '* ( ' + (customerInfo.phone || '-') + ' )\n                \n'
+        + (customerInfo.email ? '*' + ($_config.text.checkout_email || 'Email') + '* : ' + customerInfo.email + '\n\n' : '')
+        + (customerInfo.address ? '*' + ($_config.text.checkout_address || 'Alamat') + '* :\n\n' + customerInfo.address + '\n\n' : '')
+        + '*' + ($_config.text.checkout_note || 'Catatan') + '* : ' + (customerInfo.note ? '\n\n' + customerInfo.note : '-') + '\n\n'
+        + (customerInfo.shipping ? '*' + ($_config.text.checkout_shipping || 'Pengiriman') + '* : ' + customerInfo.shipping + '\n' + ($_config.checkout_form_shipping[customerInfo.shipping] ? $_config.checkout_form_shipping[customerInfo.shipping].info : '') + '\n\n' : '')
+        + (customerInfo.payment ? '*' + ($_config.text.checkout_payment || 'Pembayaran') + '* : ' + customerInfo.payment + '\n' + ($_config.checkout_form_payment[customerInfo.payment] ? $_config.checkout_form_payment[customerInfo.payment].info : '') + '\n\n' : '')
         + '                via. ' + location.protocol + '//' + location.hostname + '            ';
 
-      waMessage = waMessage.replaceAll('  ', '').replaceAll('[tab]', '    ');
+      waMessage = waMessage.replace(/  +/g, ' ').replace(/\[tab\]/g, '    ');
       waMessage = encodeURIComponent(waMessage);
 
       var waRedirectUrl = 'https://api.whatsapp.com/send?phone=' + $_config.whatsapp + '&text=' + waMessage;
-      localStorage.removeItem('cart');
+      try {
+        localStorage.removeItem('cart');
+      } catch (e) {}
       location.href = waRedirectUrl;
     }
   });
 
-  // Save cart state to localStorage
+  // Save cart state to localStorage safely
   function saveCart() {
-    if (window.localStorage) {
-      localStorage.cart = JSON.stringify(cartList);
+    try {
+      if (window.localStorage) {
+        localStorage.setItem('cart', JSON.stringify(cartList));
+      }
+    } catch (err) {
+      console.warn('[Cart] localStorage save error:', err);
     }
   }
 
@@ -359,10 +431,12 @@ function cart() {
   function renderCart() {
     $('#cart .list').empty();
 
-    if (cartList.length === 0) {
+    if (!cartList || cartList.length === 0) {
       $('#cart .list_n_form, #cart .cta').hide();
       $('#cart-btn').removeClass('open');
       $('#cart .empty').show();
+      $('#cart .cta .subtotal .qty, #cart-btn .qty').text('0');
+      $('#cart .cta .subtotal .sub, #cart-btn .sub').text('0');
       return;
     }
 
@@ -376,6 +450,9 @@ function cart() {
 
     for (var idx = 0; idx < cartList.length; idx++) {
       var item = cartList[idx];
+      var itemQty = Number(item.qty) || 1;
+      var itemPrice = Number(item.price) || 0;
+      var itemWeight = Number(item.weight) || 0;
 
       // Format multi-group variations in cart popup list
       var variantDisplayHtml = '';
@@ -383,26 +460,26 @@ function cart() {
         for (var v = 0; v < item.variants.length; v++) {
           variantDisplayHtml += item.variants[v].label + ' : <b class="variant">' + item.variants[v].value + '</b><br>';
         }
-      } else if (item.variant) {
+      } else if (item.variant && item.variant.label) {
         variantDisplayHtml += item.variant.label + ' : <b class="variant">' + item.variant.value + '</b><br>';
       }
 
       var itemHtml = '                <div class="item" data-id="' + item.id + '" data-index="' + idx + '">'
         + '                    <div class="left">'
-        + '                        <b class="title">' + item.title + '</b>'
+        + '                        <b class="title">' + (item.title || 'Produk') + '</b>'
         + '                        <br>'
         + '                        ' + variantDisplayHtml
-        + '                        <input class="note" type="text" placeholder="+ ' + $_config.text.cart_note + '.." value="' + (item.note ? item.note : '') + '">'
-        + '                        <b class="total">' + separator(item.price) + '</b>' + (item.unit ? ' <span class="unit">/' + item.unit + '</span>' : '')
+        + '                        <input class="note" type="text" placeholder="+ ' + ($_config.text.cart_note || 'Catatan') + '.." value="' + (item.note ? item.note : '') + '">'
+        + '                        <b class="total">' + separator(itemPrice) + '</b>' + (item.unit ? ' <span class="unit">/' + item.unit + '</span>' : '')
         + '                    </div>'
         + '                    <div class="right">'
-        + '                        <a class="link" href="' + item.link + '">'
-        + '                            <img class="img" src="' + item.img + '"/>'
-        + '                            ' + (item.weight ? '<small class="weight" title="' + $_config.text.cart_weight + '">' + kg(item.weight) + '</small>' : '')
+        + '                        <a class="link" href="' + (item.link || 'javascript:void(0)') + '">'
+        + '                            <img class="img" src="' + (item.img || '') + '"/>'
+        + '                            ' + (itemWeight ? '<small class="weight" title="' + ($_config.text.cart_weight || 'Berat') + '">' + kg(itemWeight) + '</small>' : '')
         + '                        </a>'
         + '                        <fieldset class="qty">'
         + '                            <button type="button">-</button>'
-        + '                            <input type="number" value="' + item.qty + '">'
+        + '                            <input type="number" value="' + itemQty + '">'
         + '                            <button type="button">+</button>'
         + '                        </fieldset>'
         + '                    </div>'
@@ -410,9 +487,9 @@ function cart() {
 
       $('#cart .list').prepend(itemHtml);
 
-      totalQty += Number(item.qty);
-      totalPrice += Number(item.price * item.qty);
-      totalWeight += Number(item.weight * item.qty);
+      totalQty += itemQty;
+      totalPrice += (itemPrice * itemQty);
+      totalWeight += (itemWeight * itemQty);
     }
 
     // Weight subtotal display and shipping availability
@@ -421,7 +498,7 @@ function cart() {
       $('#cart .cta .subtotal .wrap').prepend(
         '                <div class="grid weight">'
         + '                    <span>'
-        + '                        ' + $_config.text.cart_weight
+        + '                        ' + ($_config.text.cart_weight || 'Berat')
         + '                    </span>'
         + '                    <b>' + kg(totalWeight) + '</b>'
         + '                </div>            '
@@ -436,11 +513,6 @@ function cart() {
     // Update subtotal counters
     $('#cart .cta .subtotal .qty, #cart-btn .qty').text(totalQty);
     $('#cart .cta .subtotal .sub, #cart-btn .sub').text(separator(totalPrice));
-
-    $('#cart-btn').removeClass('open');
-    setTimeout(function () {
-      $('#cart-btn').addClass('open');
-    }, 100);
   }
 }
 
@@ -452,9 +524,9 @@ function slideshow() {
   $('.slideshow').each(function () {
     var $slideshow = $(this);
     var delay = 4000;
-    var attrDelay = parseInt($slideshow.attr('data-delay'));
+    var attrDelay = parseInt($slideshow.attr('data-delay'), 10);
     var fadeSpeed = 1000;
-    var attrFade = parseInt($slideshow.attr('data-fade'));
+    var attrFade = parseInt($slideshow.attr('data-fade'), 10);
     var timer;
 
     if (!isNaN(attrDelay)) {
@@ -573,7 +645,7 @@ function product_sort() {
     }
   });
 
-  if ($('#sort select').val() !== '') {
+  if ($('#sort select').length && $('#sort select').val()) {
     $('#sort select').trigger('change');
   }
 }
@@ -592,50 +664,55 @@ function product_convert() {
     var $product = $(this);
     $product.addClass('field_loaded');
 
-    $('meta[itemprop="priceCurrency"]', $product).attr('content', $_config.money.currency);
+    if ($_config && $_config.money) {
+      $('meta[itemprop="priceCurrency"]', $product).attr('content', $_config.money.currency);
+    }
 
-    // Build image gallery thumbnails for single product page
+    // Build image gallery thumbnails for single product page safely
     if ($product.hasClass('is_post') && $('.image .gallery', this).length) {
       $('.image .gallery img', this).each(function () {
-        var baseImgSrc = $(this).attr('src').split('=')[0];
-        var pathParts = baseImgSrc.split('/');
-        var sizeSegment = pathParts[7];
-        var thumbSrc = baseImgSrc.replace(sizeSegment, 'w150-h150-c') + '=w150-h150-c';
-        var fullSrc = baseImgSrc.replace(sizeSegment, 's800') + '=s800';
-        $('figure.cover', $product).append(
-          '<a data-lightbox="gallery" data-lightbox-title="' + $('.title', $product).text() + '" href="' + fullSrc + '"><img data-src="' + thumbSrc + '"/></a>'
-        );
+        var rawSrc = $(this).attr('src') || $(this).attr('data-src') || '';
+        if (rawSrc) {
+          var baseImgSrc = rawSrc.split('=')[0];
+          var pathParts = baseImgSrc.split('/');
+          var sizeSegment = pathParts[7] || '';
+          var thumbSrc = sizeSegment ? (baseImgSrc.replace(sizeSegment, 'w150-h150-c') + '=w150-h150-c') : baseImgSrc;
+          var fullSrc = sizeSegment ? (baseImgSrc.replace(sizeSegment, 's800') + '=s800') : baseImgSrc;
+          $('figure.cover', $product).append(
+            '<a data-lightbox="gallery" data-lightbox-title="' + $('.title', $product).text() + '" href="' + fullSrc + '"><img data-src="' + thumbSrc + '"/></a>'
+          );
+        }
       });
     }
 
-    // Extract product specifications from .field table
+    // Extract product specifications from .field table (using universal regex instead of replaceAll)
     var productFields = {};
     $('.field td[class]', $product).each(function () {
       var fieldClass = $(this).attr('class');
       if (fieldClass !== 'img') {
-        productFields[fieldClass] = $(this).text().replaceAll(' ', '').replaceAll('.', '').replaceAll(',', '').replaceAll('%', '').replaceAll(/(?:\r\n|\r|\n)/g, '');
+        productFields[fieldClass] = $(this).text().replace(/[\s\.\,\%]/g, '').replace(/[\r\n]/g, '');
       }
     });
 
     // Mark out-of-stock products
     if (productFields.status === 'off') {
       $product.addClass('empty');
-      $('figure.cover a:first', $product).append('<span class="empty"><b>' + $_config.text.product_empty + '</b></span>');
+      $('figure.cover a:first', $product).append('<span class="empty"><b>' + ($_config.text.product_empty || 'Habis') + '</b></span>');
       $('[itemprop="availability"]', $product).attr('content', 'https://schema.org/OutOfStock');
     }
 
     // Build price & interactive options HTML
-    var productUiHtml = '            <div class="price" data-price="' + Number(productFields.price) + '" data-discount="' + Number(productFields.discount) + '" data-unit="' + (productFields.unit || '') + '" data-weight="' + Number(productFields.weight) + '"></div>        ';
+    var productUiHtml = '            <div class="price" data-price="' + Number(productFields.price || 0) + '" data-discount="' + Number(productFields.discount || 0) + '" data-unit="' + (productFields.unit || '') + '" data-weight="' + Number(productFields.weight || 0) + '"></div>        ';
 
     if ($product.hasClass('is_post')) {
       productUiHtml += '                <br>                <div class="option">            ';
 
       // Parse all active variation tables (multi-group support)
-      var $variantTables = $('table.variant', $product);
+      var $variantTables = $('table.variant, .variant.hide', $product);
       $variantTables.each(function (grpIdx) {
         var $vTable = $(this);
-        if ($('.status', $vTable).text().replace(/\n/g, '').trim() === 'on') {
-          var groupLabel = $('.label', $vTable).text().replace(/\n/g, '').trim() || ('Varian ' + (grpIdx + 1));
+        if ($('.status', $vTable).text().replace(/[\r\n]/g, '').trim() === 'on') {
+          var groupLabel = $('.label', $vTable).text().replace(/[\r\n]/g, '').trim() || ('Varian ' + (grpIdx + 1));
           productUiHtml += '                    <div class="item variant" data-group-index="' + grpIdx + '">'
             + '                        <label>'
             + '                            ' + groupLabel
@@ -643,9 +720,9 @@ function product_convert() {
             + '                        <fieldset>                ';
 
           $('.name', $vTable).each(function () {
-            var optName = $(this).text().replace(/\n/g, '').trim();
+            var optName = $(this).text().replace(/[\r\n]/g, '').trim();
             if (optName) {
-              var priceCell = $(this).next('.price').text().replaceAll('.', '').replaceAll(',', '').replaceAll(' ', '').trim();
+              var priceCell = $(this).next('.price').text().replace(/[\s\.\,]/g, '').trim();
               var extraPrice = priceCell ? Number(priceCell) : 0;
               productUiHtml += '                            <button type="button" data-extra-price="' + extraPrice + '"'
                 + (extraPrice > 0 ? ' title="+" data-extra-formatted="(+' + separator(extraPrice) + ')"' : '') + '>'
@@ -661,29 +738,29 @@ function product_convert() {
       // Quantity selector
       productUiHtml += '                <div class="item qty">'
         + '                    <label>'
-        + '                        ' + $_config.text.product_qty
+        + '                        ' + ($_config.text.product_qty || 'Kuantitas')
         + '                    </label>'
         + '                    <fieldset>'
-        + '                        <button>-</button>'
+        + '                        <button type="button">-</button>'
         + '                        <input type="number" value="1">'
-        + '                        <button>+</button>'
+        + '                        <button type="button">+</button>'
         + '                    </fieldset>'
         + '                </div>            ';
 
       // Call-to-action buttons (WhatsApp Chat & Add to Cart)
       productUiHtml += '                </div>                <div class="cta ' + (productFields.status === 'off' ? 'disabled' : '') + '">'
-        + '                    <button class="chat" target="pop-chat">'
+        + '                    <button type="button" class="chat" target="pop-chat">'
         + '                        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">'
-        + '                            <path d="M260.062 32C138.605 32 40.134 129.701 40.134 250.232c0 41.23 11.532 79.79 31.559 112.687L32 480l121.764-38.682c31.508 17.285 67.745 27.146 106.298 27.146C381.535 468.464 480 370.749 480 250.232 480 129.701 381.535 32 260.062 32zm109.362 301.11c-5.174 12.827-28.574 24.533-38.899 25.072-10.314.547-10.608 7.994-66.84-16.434-56.225-24.434-90.052-83.844-92.719-87.67-2.669-3.812-21.78-31.047-20.749-58.455 1.038-27.413 16.047-40.346 21.404-45.725 5.351-5.387 11.486-6.352 15.232-6.413 4.428-.072 7.296-.132 10.573-.011 3.274.124 8.192-.685 12.45 10.639 4.256 11.323 14.443 39.153 15.746 41.989 1.302 2.839 2.108 6.126.102 9.771-2.012 3.653-3.042 5.935-5.961 9.083-2.935 3.148-6.174 7.042-8.792 9.449-2.92 2.665-5.97 5.572-2.9 11.269 3.068 5.693 13.653 24.356 29.779 39.736 20.725 19.771 38.598 26.329 44.098 29.317 5.515 3.004 8.806 2.67 12.226-.929 3.404-3.599 14.639-15.746 18.596-21.169 3.955-5.438 7.661-4.373 12.742-2.329 5.078 2.052 32.157 16.556 37.673 19.551 5.51 2.989 9.193 4.529 10.51 6.9 1.317 2.38.901 13.531-4.271 26.359z"></path>'
+        + '                            <path d="M260.062 32C138.605 32 40.134 129.701 40.134 250.232c0 41.23 11.532 79.79 31.559 112.687L32 480l121.764-38.682c31.508 17.285 67.745 27.146 106.298 27.146C381.535 468.464 480 370.749 480 250.232 480 129.701 381.535 32 260.062 32zm109.362 301.11c-5.174 12.827-28.574 24.533-38.899 25.072-10.314.547-10.608 7.994-66.84-16.434-56.225-24.434-90.052-83.844-92.719-87.67-2.669-3.812-21.78-31.047-20.749-58.455 1.038-27.413 16.047-40.346 21.404-45.725 5.351-5.387 11.486-6.352 15.232-6.413 4.428-.072 7.296-.132 10.573-.011 3.274.124 8.192-.685 12.45 10.639 4.256 11.323 14.443 39.153 15.746 41.989 1.302 2.839 2.108 6.126.102 9.771-2.012 3.653-3.042 5.935-5.961 9.083-2.935 3.148-6.174 7.042-8.792 9.449-2.92 2.665-5.97 5.572-2.9 11.269 3.068 5.693 13.653 24.356 29.779 39.736 20.725 19.771 38.598 26.329 44.098 29.317 5.515 3.004 8.806 2.67 12.226-.929 3.404-3.599 14.639-15.746 18.596-21.169 3.955-5.438 7.661-4.373 12.742-2.329 5.078 2.052 32.157 16.556 37.673 19.551 5.51 2.989 9.193 4.529 10.51 6.9 1.317 2.38.901 13.531-4.271 26.359z\"></path>'
         + '                        </svg>'
         + '                    </button>            ';
 
-      productUiHtml += '                <button class="cart-add">'
+      productUiHtml += '                <button type="button" class="cart-add">'
         + '                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">'
         + '                        <path d="M387.9 373.7h49.2l17.5-75.4h-66.7zM387.9 448h.5c18.7 0 33.4-12.5 38.3-29.5l6-25.9h-44.8V448zM265.4 392.5h103.7V448H265.4zM75 373.7h49v-75.4H57.5zM142.9 192h103.7v87.5H142.9zM265.4 192h103.7v87.5H265.4zM85.5 418.3c4.7 17 19.4 29.7 38.1 29.7h.5v-55.5H79.4l6.1 25.8zM142.9 392.5h103.7V448H142.9zM265.4 298.3h103.7v75.4H265.4zM142.9 298.3h103.7v75.4H142.9z" />'
         + '                        <path d="M464 192h-47.9V96c0-17.6-14.4-32-32-32H127.9c-17.6 0-32 14.4-32 32v96H48c-10.3 0-17.9 9.6-15.6 19.6l19.7 67.9H124V106c0-7.7 6.3-14 14-14h236c7.7 0 14 6.3 14 14v173.5h72l19.6-67.9c2.3-10-5.3-19.6-15.6-19.6z" />'
         + '                    </svg>'
-        + '                    ' + $_config.text.product_add
+        + '                    ' + ($_config.text.product_add || '+ Tambahkan')
         + '                </button>            ';
 
       productUiHtml += '                </div>            ';
@@ -693,12 +770,12 @@ function product_convert() {
         var $marketplace = $('.marketplace', $product);
         if ($('.status', $marketplace).text() === 'on') {
           productUiHtml += '                        <div class="marketplace">'
-            + '                            <small>' + $_config.text.product_via_marketplace + '</small>'
+            + '                            <small>' + ($_config.text.product_via_marketplace || 'atau, checkout via marketplace favorit anda :') + '</small>'
             + '                            <br>                    ';
           $('.link', $marketplace).each(function () {
             var linkUrl = $(this).text();
-            if (linkUrl) {
-              var domain = linkUrl.split('/')[2];
+            if (linkUrl && linkUrl.indexOf('http') >= 0) {
+              var domain = linkUrl.split('/')[2] || '';
               productUiHtml += '                                <a href="' + linkUrl + '" target="_blank" title="' + domain.toLowerCase().replace('www.', '') + '" rel="nofollow">'
                 + '                                    <img src="https://www.google.com/s2/favicons?domain=' + domain + '&sz=24" alt="favicon"/>'
                 + '                                </a>                            ';
@@ -709,7 +786,12 @@ function product_convert() {
       }
     }
 
-    $(productUiHtml).insertAfter($('.title', $product));
+    var $titleEl = $('.title, .post-title, h1:first', $product);
+    if ($titleEl.length) {
+      $(productUiHtml).insertAfter($titleEl);
+    } else {
+      $product.prepend(productUiHtml);
+    }
 
     var unitName = $('.price', $product).attr('data-unit');
     var rawBasePrice = Number($('.price', $product).attr('data-price')) || 0;
@@ -768,7 +850,9 @@ function product_convert() {
           updateProductPrice();
         });
         // Select first button by default in each group
-        $('button:first', $group).addClass('active');
+        if (!$('button.active', $group).length) {
+          $('button:first', $group).addClass('active');
+        }
       });
       updateProductPrice();
     } else {
@@ -793,20 +877,21 @@ function product_convert() {
 
     // Quantity selector input & buttons in product detail
     $('.qty input', $product).on('change', function () {
-      var qtyVal = Number($(this).val());
-      if (qtyVal < 1) {
+      var qtyVal = parseInt($(this).val(), 10);
+      if (isNaN(qtyVal) || qtyVal < 1) {
         qtyVal = 1;
       }
       $(this).val(qtyVal);
     });
 
     $('.qty button', $product).on('click', function () {
-      var currentQty = Number($('.qty input', $product).val());
+      var currentQty = parseInt($('.qty input', $product).val(), 10) || 1;
       if ($(this).text() === '-') {
         currentQty = currentQty - 1;
       } else {
         currentQty = currentQty + 1;
       }
+      if (currentQty < 1) currentQty = 1;
       $('.qty input', $product).val(currentQty).trigger('change');
     });
   });
@@ -853,7 +938,7 @@ function popwin(url, width, height) {
 
 /**
  * Shortcode Parser Module
- * Converts custom shortcodes like [youtube], [code], [img], [url] in blog posts.
+ * Converts custom shortcodes like [youtube], [code], [img], [url] in blog posts safely.
  */
 function shortcode() {
   $('.post-body').each(function () {
@@ -875,16 +960,21 @@ function shortcode() {
 
     if (shortcodeType === 'img') {
       var imgSrc = $(this).attr('src');
-      $(this).wrap('<a class="lightbox" href="' + imgSrc + '"></a>');
+      if (imgSrc) {
+        $(this).wrap('<a class="lightbox" href="' + imgSrc + '"></a>');
+      }
     }
 
     if (shortcodeType === 'youtube') {
       var videoSrc = $(this).attr('data-src');
-      var videoId = videoSrc.split('/')[3];
-      if (videoSrc.indexOf('https://www.youtube.com/watch?v=') >= 0) {
-        videoId = get_url_parameter('v', videoSrc);
+      if (videoSrc && typeof videoSrc === 'string') {
+        var videoParts = videoSrc.split('/');
+        var videoId = videoParts[3] || '';
+        if (videoSrc.indexOf('https://www.youtube.com/watch?v=') >= 0) {
+          videoId = get_url_parameter('v', videoSrc) || videoId;
+        }
+        $(this).attr('data-src', 'https://www.youtube.com/embed/' + videoId + '?rel=0');
       }
-      $(this).attr('data-src', 'https://www.youtube.com/embed/' + videoId + '?rel=0');
     }
   });
 }
@@ -894,6 +984,8 @@ function shortcode() {
  * Fills data-text placeholders from $_config.text.
  */
 function translate() {
+  if (!$_config || !$_config.text) return;
+
   $('[data-text]').each(function () {
     var key = $(this).attr('data-text');
     if ($_config.text[key]) {
@@ -982,7 +1074,7 @@ function etc() {
   $('.LinkList li a:contains("_")').each(function () {
     var $subList = $(this).parent('li').prev('.dropdown').find('ul');
     $(this).parent('li').appendTo($subList);
-    var cleanTitle = $(this).text().replaceAll('_', '').replaceAll('_ ', '');
+    var cleanTitle = $(this).text().replace(/_/g, '').trim();
     $(this).text(cleanTitle);
   });
 
@@ -995,7 +1087,8 @@ function etc() {
   if ($('[data-feed]').length) {
     $('[data-feed]').each(function () {
       var $feedEl = $(this);
-      var feedUrl = $(this).attr('data-feed').replace('?m=1', '').replace('&m=1', '').replaceAll(' ', '%20');
+      var feedAttr = $(this).attr('data-feed') || '';
+      var feedUrl = feedAttr.replace('?m=1', '').replace('&m=1', '').replace(/ /g, '%20');
       $feedEl.addClass('loading');
       $feedEl.load(feedUrl + ' .is_loop', function () {
         var feedContent = $(this).html();
@@ -1033,7 +1126,7 @@ function etc() {
   // Smooth scroll to URL hash target
   if (window.location.hash) {
     if ($(window.location.hash).length) {
-      var headerHeight = $('#header').outerHeight();
+      var headerHeight = $('#header').outerHeight() || 0;
       var stickyAttrHeight = $('.is_single article .attr-sticky').outerHeight() || 0;
       $('html, body').stop().animate({
         scrollTop: $(window.location.hash).offset().top - headerHeight - stickyAttrHeight - 20
@@ -1046,10 +1139,11 @@ function etc() {
   }
 
   $(document).on('click', 'a[href*="#"]', function (e) {
-    var hashTarget = '#' + $(this).attr('href').split('#')[1];
-    if ($(hashTarget).length && $(this).attr('href').split('#')[0] === '') {
+    var hrefVal = $(this).attr('href') || '';
+    var hashTarget = '#' + hrefVal.split('#')[1];
+    if ($(hashTarget).length && hrefVal.split('#')[0] === '') {
       e.preventDefault();
-      var headerH = $('#header').outerHeight();
+      var headerH = $('#header').outerHeight() || 0;
       var stickyH = $('.is_single article .attr-sticky').outerHeight() || 0;
       $('html, body').stop().animate({
         scrollTop: $(hashTarget).offset().top - headerH - stickyH - 20
@@ -1096,8 +1190,8 @@ function etc() {
   });
 
   // Single post navigation (Next & Previous products)
-  if ($_config.url.view === 'single') {
-    var prevText = $_config.text.product_prev;
+  if ($_config && $_config.url && $_config.url.view === 'single') {
+    var prevText = ($_config.text && $_config.text.product_prev) ? $_config.text.product_prev : 'Sebelumnya';
     var olderLink = $('a.blog-pager-older-link').attr('href');
     if (olderLink) {
       $('a.blog-pager-older-link').load(olderLink + ' article h1', function () {
@@ -1110,14 +1204,14 @@ function etc() {
             var rawSrc = srcMatch.split('"')[0];
             var baseSrc = rawSrc.split('=')[0];
             var sizeKey = baseSrc.split('/')[7];
-            var thumb = baseSrc.replace(sizeKey, 'w100-h100-c') + '=w100-h100-c';
+            var thumb = sizeKey ? (baseSrc.replace(sizeKey, 'w100-h100-c') + '=w100-h100-c') : baseSrc;
             $('a.blog-pager-older-link > figure').html('<img src="' + thumb + '"/>').removeClass('loading');
           }
         });
       });
     }
 
-    var nextText = $_config.text.product_next;
+    var nextText = ($_config.text && $_config.text.product_next) ? $_config.text.product_next : 'Selanjutnya';
     var newerLink = $('a.blog-pager-newer-link').attr('href');
     if (newerLink) {
       $('a.blog-pager-newer-link').load(newerLink + ' article h1', function () {
@@ -1130,7 +1224,7 @@ function etc() {
             var rawSrc = srcMatch.split('"')[0];
             var baseSrc = rawSrc.split('=')[0];
             var sizeKey = baseSrc.split('/')[7];
-            var thumb = baseSrc.replace(sizeKey, 'w100-h100-c') + '=w100-h100-c';
+            var thumb = sizeKey ? (baseSrc.replace(sizeKey, 'w100-h100-c') + '=w100-h100-c') : baseSrc;
             $('a.blog-pager-newer-link > figure').html('<img src="' + thumb + '"/>').removeClass('loading');
           }
         });
@@ -1163,7 +1257,7 @@ function timeago() {
     var monthsWord = 'months';
     var yearsWord = 'years';
 
-    if ($_config.money.country_id === 'id-ID') {
+    if ($_config && $_config.money && $_config.money.country_id === 'id-ID') {
       agoWord = 'yang lalu';
       secondsWord = 'detik';
       minutesWord = 'menit';
@@ -1174,6 +1268,7 @@ function timeago() {
     }
 
     var targetDate = new Date(dateInput);
+    if (isNaN(targetDate.getTime())) return dateInput;
     var elapsedMs = new Date() - targetDate;
 
     if (elapsedMs < 60000) {
@@ -1248,7 +1343,7 @@ function pop() {
 
   $('[id*="pop-"]:not(".pop-loaded")').each(function () {
     var $modal = $(this);
-    var popTitle = $modal.attr('data-pop-title');
+    var popTitle = $modal.attr('data-pop-title') || '';
     var popWidth = $modal.attr('data-pop-width');
     $modal.wrap('<div class="pop"></div>');
     $modal.wrap('<div class="pop-wrap"></div>');
@@ -1308,7 +1403,7 @@ function pop() {
     }
 
     if (targetId === 'pop-video') {
-      var videoHref = $(this).attr('href');
+      var videoHref = $(this).attr('href') || '';
       var vidId = videoHref.split('/')[3];
       if (videoHref.indexOf('https://www.youtube.com/watch?v=') >= 0) {
         vidId = get_url_parameter('v', videoHref);
@@ -1331,22 +1426,24 @@ function pop() {
  * Handles modal full-size image viewing, swipe/click next-prev, and keyboard navigation.
  */
 function lightbox() {
-  $(
-    '        <div id="lightbox">'
-    + '            <div class="lb-wrap">'
-    + '                <figure>'
-    + '                    <div class="lb-img">'
-    + '                        <div class="lb-count"></div>'
-    + '                    </div>'
-    + '                    <nav class="lb-nav">'
-    + '                        <div class="lb-np lb-prev"></div>'
-    + '                        <div class="lb-close"></div>'
-    + '                        <div class="lb-np lb-next"></div>'
-    + '                    </nav>'
-    + '                </figure>'
-    + '            </div>'
-    + '        </div>    '
-  ).appendTo('body');
+  if ($('#lightbox').length === 0) {
+    $(
+      '        <div id="lightbox">'
+      + '            <div class="lb-wrap">'
+      + '                <figure>'
+      + '                    <div class="lb-img">'
+      + '                        <div class="lb-count"></div>'
+      + '                    </div>'
+      + '                    <nav class="lb-nav">'
+      + '                        <div class="lb-np lb-prev"></div>'
+      + '                        <div class="lb-close"></div>'
+      + '                        <div class="lb-np lb-next"></div>'
+      + '                    </nav>'
+      + '                </figure>'
+      + '            </div>'
+      + '        </div>    '
+    ).appendTo('body');
+  }
 
   $('[data-lightbox]').each(function () {
     var groupName = $(this).attr('data-lightbox');
@@ -1363,7 +1460,7 @@ function lightbox() {
     });
 
     $(this).on('contextmenu', function () {
-      alert('© ' + $_config.page.title);
+      alert('© ' + ($_config.page ? $_config.page.title : ''));
       return false;
     });
   });
@@ -1393,7 +1490,7 @@ function lightbox() {
           return false;
         });
         $(this).on('contextmenu', function () {
-          alert('© ' + $_config.page.title);
+          alert('© ' + ($_config.page ? $_config.page.title : ''));
           return false;
         });
 
@@ -1506,11 +1603,11 @@ function lazyload() {
     var elemOffset = $el.offset().top;
     $el.attr('data-offset-top', elemOffset);
 
-    var srcUrl = $el.attr('data-src');
-    srcUrl = srcUrl.replace('1.bp.blogspot.com', 'lh3.googleusercontent.com');
-    srcUrl = srcUrl.replace('2.bp.blogspot.com', 'lh3.googleusercontent.com');
-    srcUrl = srcUrl.replace('3.bp.blogspot.com', 'lh3.googleusercontent.com');
-    srcUrl = srcUrl.replace('4.bp.blogspot.com', 'lh3.googleusercontent.com');
+    var srcUrl = $el.attr('data-src') || '';
+    srcUrl = srcUrl.replace(/1\.bp\.blogspot\.com/g, 'lh3.googleusercontent.com');
+    srcUrl = srcUrl.replace(/2\.bp\.blogspot\.com/g, 'lh3.googleusercontent.com');
+    srcUrl = srcUrl.replace(/3\.bp\.blogspot\.com/g, 'lh3.googleusercontent.com');
+    srcUrl = srcUrl.replace(/4\.bp\.blogspot\.com/g, 'lh3.googleusercontent.com');
 
     var tag = $el.prop('tagName').toLowerCase();
     if (elemOffset <= viewThreshold) {
@@ -1529,11 +1626,11 @@ function lazyload() {
     $('[data-src]:not([lazy="true"])').each(function () {
       var $el = $(this);
       var elTop = $el.offset().top;
-      var dataSrc = $el.attr('data-src');
-      dataSrc = dataSrc.replace('1.bp.blogspot.com', 'lh3.googleusercontent.com');
-      dataSrc = dataSrc.replace('2.bp.blogspot.com', 'lh3.googleusercontent.com');
-      dataSrc = dataSrc.replace('3.bp.blogspot.com', 'lh3.googleusercontent.com');
-      dataSrc = dataSrc.replace('4.bp.blogspot.com', 'lh3.googleusercontent.com');
+      var dataSrc = $el.attr('data-src') || '';
+      dataSrc = dataSrc.replace(/1\.bp\.blogspot\.com/g, 'lh3.googleusercontent.com');
+      dataSrc = dataSrc.replace(/2\.bp\.blogspot\.com/g, 'lh3.googleusercontent.com');
+      dataSrc = dataSrc.replace(/3\.bp\.blogspot\.com/g, 'lh3.googleusercontent.com');
+      dataSrc = dataSrc.replace(/4\.bp\.blogspot\.com/g, 'lh3.googleusercontent.com');
 
       var tagName = $el.prop('tagName').toLowerCase();
       if (elTop <= bottomY) {
@@ -1550,6 +1647,7 @@ function lazyload() {
  * Capitalizes the first letter of each word in a string.
  */
 function titleCase(str) {
+  if (!str) return '';
   var words = str.split(' ');
   for (var i = 0; i < words.length; i++) {
     words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
@@ -1575,6 +1673,7 @@ function $_GET(paramName) {
  * Extracts a specific query parameter from an arbitrary URL string.
  */
 function get_url_parameter(paramName, urlStr) {
+  if (!urlStr) return '';
   var cleanParam = paramName.replace(/[\[\]]/g, '\\$&');
   var regex = new RegExp('[?&]' + cleanParam + '(=([^&#]*)|&|#|$)');
   var results = regex.exec(urlStr);
